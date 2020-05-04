@@ -1,8 +1,78 @@
 const { connection } = require('./config')
-const { statusEnum, carSizeDatas, slotStatus } = require('./dataEnum')
+const { statusEnum, slotStatus } = require('./dataEnum')
 const { parkingSlotDB, parkingTransactionDB } = require('./database')
 
 
+
+
+//1.1
+const createParkSlot = (car_size, name) => {
+
+    return new Promise((resolve, reject) => {
+        connection.beginTransaction(async (err) => {
+            try {
+                let param = { field: "car_size", value: car_size }
+                let infoParkings = await parkingSlotDB.find(param)
+                console.log("infoParking =>", infoParkings)
+                if (infoParkings.length == 0) {
+                    return reject("not car size : " + car_size)
+                }
+                let infoParking = infoParkings[0]
+                const {
+                    id,
+                    // car_size,
+                    unit_max, unit_remaining
+                } = infoParking
+                const createParkSlotDetail = await parkingSlotDB.insertDataDetail(id, name)
+                // console.log(" createParkSlotDetail => ", createParkSlotDetail)
+                const { insertId } = createParkSlotDetail
+                const paramUnitSlot = {
+                    id: id,
+                    unit_max: unit_max + 1,
+                    unit_remaining: unit_remaining + 1
+                }
+                // console.log(" paramUnitSlot => ", paramUnitSlot)
+                const updateUnitSlot = await parkingSlotDB.update(paramUnitSlot)
+                // console.log(" updateUnitSlot => ", updateUnitSlot)
+                const dataResponse = await parkingSlotDB.findDetail(insertId)
+                connection.commit()
+                resolve(dataResponse)
+
+            } catch (error) {
+                connection.rollback()
+                reject(err)
+            }
+        })
+    })
+}
+
+//1.2
+const deleteParkSlot = (slotDetailId) => {
+
+    return new Promise((resolve, reject) => {
+        connection.beginTransaction(async (err) => {
+            try {
+                const slotDetail = await parkingSlotDB.findDetail(slotDetailId)
+
+                let param = { id: slotDetailId, status: slotStatus.delete }
+                let delDetail = await parkingSlotDB.updateParkingSlotDetail(param)
+
+                const {
+                    car_size_id,
+                    unit_remaining, unit_max
+                } = slotDetail
+                let param2 = { id: car_size_id, unit_max: unit_max - 1, unit_remaining: unit_remaining - 1 }
+                let updateSlot = await parkingSlotDB.update(param2)
+                connection.commit()
+                resolve(updateSlot)
+
+            } catch (error) {
+                connection.rollback()
+                reject(err)
+            }
+        })
+    })
+}
 
 //2
 const insertTranSaction = (param) => {
@@ -49,7 +119,7 @@ const insertTranSaction = (param) => {
                     id: car_size_id,
                     unit_remaining: unit_remaining - 1
                 }
-                const updateSlotDetail = await parkingSlotDB.updateParingSlotDetail(paramSlotDetail)
+                const updateSlotDetail = await parkingSlotDB.updateParkingSlotDetail(paramSlotDetail)
                 const updateParkingSlot = await parkingSlotDB.update(paramSlot)
                 connection.commit()
                 resolve({ insertId })
@@ -84,7 +154,7 @@ const leave = (ticketId) => {
                     id: slot_detail_id,
                     status: slotStatus.waiting
                 }
-                let updateSlotDetail = await parkingSlotDB.updateParingSlotDetail(paramSlotDetail)
+                let updateSlotDetail = await parkingSlotDB.updateParkingSlotDetail(paramSlotDetail)
                 connection.commit()
                 resolve(updateLeave)
 
@@ -157,10 +227,12 @@ const getAllocatedSlot = (param) => {
     return new Promise(async (resolve, reject) => {
         try {
             const { car_size } = param
-            let checked = carSizeDatas.some(val => val == car_size)
+
+            let checked = await parkingSlotDB.isCarSize(car_size)
             if (!checked) {
                 return reject("parking not have : " + car_size)
             }
+
             // let findCarSize = await parkingSlotDB.find({ field: "car_size", value: car_size })
             // let carSizeId = findCarSize[0].id
             let findAllocatedData = await parkingSlotDB.findAllocated(car_size)
@@ -174,6 +246,8 @@ const getAllocatedSlot = (param) => {
 
 
 module.exports = {
+    createParkSlot,//1.1
+    deleteParkSlot,//1.2
     insertTranSaction,
     leave,//3
     getPark,//4

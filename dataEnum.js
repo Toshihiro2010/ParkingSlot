@@ -1,27 +1,16 @@
 const status = {
     pending: "pending",
-    complete: "complete"
-}
-
-const carSize = {
-    small: "small",
-    medium: "medium",
-    large: "large"
+    complete: "complete",
+    delete: "delete"
 }
 
 const slotStatus = {
     apply: "apply",
-    waiting: "waiting"
+    waiting: "waiting",
+    delete: "delete"
 }
-
-const carSizeDatas = [
-    "small", "medium", "large"
-]
-
 
 module.exports = {
     statusEnum: status,
-    carSizeEnum: carSize,
     slotStatus,
-    carSizeDatas
 }

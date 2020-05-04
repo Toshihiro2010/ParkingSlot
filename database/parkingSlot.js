@@ -27,8 +27,10 @@ const find = (condition = null) => {
     return new Promise((resolve, reject) => {
         connection.query(strSql, (err, res) => {
             if (err) {
+                console.log("err => ", err)
                 return reject(err)
             }
+            console.log("res => ", res)
             resolve(res)
         })
     })
@@ -50,15 +52,17 @@ const update = (param) => {
 
 const findDetail = (carSlotDetailId) => {
     return new Promise((resolve, reject) => {
-        let sql = " SELECT d.id, d.car_size_id , s.car_size , d.name , d.status "
-        sql += " FROM parking_slot s JOIN parking_slot_detail d on s.id = d.car_size_id WHERE s.id = ? "
+        let sql = " SELECT d.id, d.car_size_id , s.car_size , d.name , d.status , s.unit_max , s.unit_remaining "
+        sql += " FROM parking_slot s JOIN parking_slot_detail d on s.id = d.car_size_id WHERE d.id = ? "
         connection.query(sql, [carSlotDetailId], (err, results) => {
             if (err) {
+                console.log("err=> ", err)
                 return reject(err)
             }
             if (results.length == 1) {
                 return resolve(results[0])
             }
+            reject("Not Data")
         })
     })
 }
@@ -106,11 +110,25 @@ const insertData = (carSize, unit) => {
     })
 }
 
-const updateParingSlotDetail = (param) => {
+const insertDataDetail = (car_size_id, name) => {
+    return new Promise((resolve, reject) => {
+        connection.query({
+            sql: "INSERT INTO parking_slot_detail (car_size_id,name) VALUES (?,?)",
+            values: [car_size_id, name],
+        }, (err, results) => {
+            if (err) {
+                return reject(err)
+            }
+            resolve(results)
+        })
+    })
+}
+
+const updateParkingSlotDetail = (param) => {
     return new Promise((resolve, reject) => {
         const { id, ..._param } = param
         let sql = connection.format("UPDATE parking_slot_detail SET ? WHERE id = ?", [_param, id])
-        console.log("updateParingSlotDetail => sql => ", sql)
+        console.log("updateParkingSlotDetail => sql => ", sql)
         connection.query(sql, (err, results) => {
             if (err) return reject(err);
             resolve(results)
@@ -127,6 +145,6 @@ module.exports = {
     findAllocated,
     update,
     insertData,
-
-    updateParingSlotDetail,
+    insertDataDetail,
+    updateParkingSlotDetail,
 }

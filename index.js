@@ -12,56 +12,35 @@ app.get('/', (req, res) => {
     res.send('<h2>Hello Paking Slot</h2>')
 })
 
-
 app.post('/parking', async (req, res) => {
+
     let req_json = req.body;
-    if (!req_json.plate_number && !req_json.car_size) {
+    if (!req_json.car_size || !req_json.name) {
         res.sendStatus(404)
     }
+
     try {
-        let insertObject = await db.insertTranSaction(req_json)
-        let parkingInfo = await db.getInfoParaking(insertObject.insertId)
-        // console.log("parkingInfo => ", parkingInfo)
-        let data = {
-            ticket_id: parkingInfo.ticket_id,
-            plate_number: parkingInfo.plate_number,
-            car_size: parkingInfo.car_size,
-            name: parkingInfo.name
-        }
-        res.json({ data });
+        const { car_size, name } = req_json
+        let dataInsert = await db.createParkSlot(car_size, name)
+        res.json({ dataInsert });
     } catch (error) {
         res.status(404).json({ message: error })
     }
 })
 
-app.get('/infoTicket/:ticketId', async (req, res) => {
-    let ticketId = req.params.ticketId
+app.delete('/parking/:slotDetailId', async (req, res) => {
+    let slotDetailId = req.params.slotDetailId
+
     try {
-        let dataQuery = await db.getInfoParaking(ticketId)
-        console.log("dataQuery => ", dataQuery)
-        let data = {
-            ticketId,
-            plate_number: dataQuery.plate_number,
-            car_size: dataQuery.car_size,
-            name: dataQuery.name
-        }
-        res.json({ data });
+        let dataDelte = await db.deleteParkSlot(slotDetailId)
+        console.log("dataDelte => ", dataDelte)
+        res.sendStatus(204)
     } catch (error) {
         res.status(404).json({ message: error })
     }
 })
 
 
-app.put('/leavePark/:ticketId', async (req, res) => {
-    let ticketId = req.params.ticketId
-    try {
-        let data = await db.leave(ticketId)
-        console.log("data : ", data)
-        res.json({ message: "Thank You.!" })
-    } catch (error) {
-        res.status(404).json({ message: error })
-    }
-})
 
 app.get('/parking', async (req, res) => {
 
@@ -105,16 +84,55 @@ app.get('/allocatedSlot/:carSize', async (req, res) => {
     }
 })
 
+app.get('/infoTicket/:ticketId', async (req, res) => {
+    let ticketId = req.params.ticketId
+    try {
+        let dataQuery = await db.getInfoParaking(ticketId)
+        console.log("dataQuery => ", dataQuery)
+        let data = {
+            ticketId,
+            plate_number: dataQuery.plate_number,
+            car_size: dataQuery.car_size,
+            name: dataQuery.name
+        }
+        res.json({ data });
+    } catch (error) {
+        res.status(404).json({ message: error })
+    }
+})
 
-// app.get('/parking/:carSize', async (req, res) => {
-//     let carSize = req.params.carSize
-//     try {
-//         let data = await db.getPark(carSize)
-//         res.send(data)
-//     } catch (error) {
-//         res.status(404).json({ message: error })
-//     }
-// })
+
+app.post('/enterPark', async (req, res) => {
+    let req_json = req.body;
+    if (!req_json.plate_number || !req_json.car_size) {
+        res.sendStatus(404)
+    }
+    try {
+        let insertObject = await db.insertTranSaction(req_json)
+        let parkingInfo = await db.getInfoParaking(insertObject.insertId)
+        // console.log("parkingInfo => ", parkingInfo)
+        let data = {
+            ticket_id: parkingInfo.ticket_id,
+            plate_number: parkingInfo.plate_number,
+            car_size: parkingInfo.car_size,
+            name: parkingInfo.name
+        }
+        res.json({ data });
+    } catch (error) {
+        res.status(404).json({ message: error })
+    }
+})
+
+app.put('/leavePark/:ticketId', async (req, res) => {
+    let ticketId = req.params.ticketId
+    try {
+        let data = await db.leave(ticketId)
+        console.log("data : ", data)
+        res.json({ message: "Thank You.!" })
+    } catch (error) {
+        res.status(404).json({ message: error })
+    }
+})
 
 app.listen(3000, () => {
     console.log('Start server at port 3000.')

@@ -1,4 +1,6 @@
 # ParkingSlot #
+Database : MySql
+NodeJS verison : 10.16.0
 
 ## Create Database ##
 

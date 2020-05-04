@@ -192,10 +192,23 @@ const getInfoParaking = (ticketId) => {
 
 
 
-const getPark = (param = null) => {
+const getPark = () => {
     return new Promise(async (resolve, reject) => {
         try {
             let data = await parkingSlotDB.find()
+            resolve(data)
+        } catch (error) {
+            reject(error)
+        }
+
+    })
+}
+
+
+const getParkDetail = (car_size) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let data = await parkingSlotDB.findDetailByCarSize(car_size)
             resolve(data)
         } catch (error) {
             reject(error)
@@ -251,6 +264,7 @@ module.exports = {
     insertTranSaction,
     leave,//3
     getPark,//4
+    getParkDetail,
     getPlateNumber,//5
     getAllocatedSlot, //6
     getInfoParaking
